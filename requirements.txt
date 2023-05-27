@@ -9,4 +9,5 @@ black
 pre-commit
 labmaze
 pygame
+wandb
 

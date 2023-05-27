@@ -29,6 +29,9 @@ from torch import multiprocessing as mp
 from torch import nn
 from torch.nn import functional as F
 
+from memory_grid.env import GridMazeEnv
+import wandb
+
 import atari_wrappers
 from core import environment
 from core import file_writer
@@ -39,8 +42,10 @@ from core import vtrace
 # yapf: disable
 parser = argparse.ArgumentParser(description="PyTorch Scalable Agent")
 
-parser.add_argument("--env", type=str, default="PongNoFrameskip-v4",
-                    help="Gym environment.")
+# parser.add_argument("--env", type=str, default="GridMaze9x9", help="Gym environment.")
+parser.add_argument("-s", "--grid_size", type=int, default=9, help="Size of the grid maze.")
+parser.add_argument("-v", "--view_distance", type=int, default=2, help="Field of view of the agent.")
+parser.add_argument("--rand_name", type=str, default="moaotos42", help="Name of the randomization.")
 parser.add_argument("--mode", default="train",
                     choices=["train", "test", "test_render"],
                     help="Training or test mode.")
@@ -770,8 +775,8 @@ Net = MemoryGridNet
 
 
 def create_env(flags):
-    from memory_grid.env import GridMazeEnv
-    env = GridMazeEnv('GridMaze7x7', rand_name='mxtxaxs42', view_distance=2)
+    env_name = "GridMaze{}x{}".format(flags.grid_size, flags.grid_size)
+    env = GridMazeEnv(env_name, rand_name=flags.rand_name, view_distance=flags.view_distance)
     return env
     # return atari_wrappers.wrap_pytorch(
     #     atari_wrappers.wrap_deepmind(
