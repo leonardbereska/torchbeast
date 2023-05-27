@@ -34,7 +34,8 @@ class Environment:
         self.episode_return = torch.zeros(1, 1)
         self.episode_step = torch.zeros(1, 1, dtype=torch.int32)
         initial_done = torch.ones(1, 1, dtype=torch.uint8)
-        initial_frame = _format_frame(self.gym_env.reset())
+        obs, _ = self.gym_env.reset()
+        initial_frame = _format_frame(obs)
         return dict(
             frame=initial_frame,
             reward=initial_reward,
@@ -45,13 +46,14 @@ class Environment:
         )
 
     def step(self, action):
-        frame, reward, done, unused_info = self.gym_env.step(action.item())
+        frame, reward, terminated, truncated, unused_info = self.gym_env.step(action.item())
+        done = terminated or truncated
         self.episode_step += 1
         self.episode_return += reward
         episode_step = self.episode_step
         episode_return = self.episode_return
         if done:
-            frame = self.gym_env.reset()
+            frame, _ = self.gym_env.reset()
             self.episode_return = torch.zeros(1, 1)
             self.episode_step = torch.zeros(1, 1, dtype=torch.int32)
 
