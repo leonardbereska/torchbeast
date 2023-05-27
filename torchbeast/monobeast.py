@@ -29,11 +29,11 @@ from torch import multiprocessing as mp
 from torch import nn
 from torch.nn import functional as F
 
-from torchbeast import atari_wrappers
-from torchbeast.core import environment
-from torchbeast.core import file_writer
-from torchbeast.core import prof
-from torchbeast.core import vtrace
+import atari_wrappers
+from core import environment
+from core import file_writer
+from core import prof
+from core import vtrace
 
 
 # yapf: disable
