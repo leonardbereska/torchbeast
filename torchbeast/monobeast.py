@@ -48,7 +48,6 @@ parser.add_argument("-wn","--wandb-name", default=None, help="name of the wandb 
 parser.add_argument("-wp", "--wandb-project", default=None, help="name of the wandb project")
 parser.add_argument("-s", "--grid_size", type=int, default=9, help="Size of the grid maze.")
 parser.add_argument("-v", "--view_distance", type=int, default=2, help="Field of view of the agent.")
-parser.add_argument("--rand_name", type=str, default="moaotos42", help="Name of the randomization.")
 parser.add_argument("--seed", type=int, default=42, help="Seed for the randomization.")
 parser.add_argument("--random_maze", default=True, type=bool, help="Whether to randomize the maze.") 
 parser.add_argument("--random_agent_position", default=True, type=bool, help="Whether to randomize the agent.")
