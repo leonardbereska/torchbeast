@@ -43,6 +43,8 @@ from core import vtrace
 parser = argparse.ArgumentParser(description="PyTorch Scalable Agent")
 
 # parser.add_argument("--env", type=str, default="GridMaze9x9", help="Gym environment.")
+parser.add_argument("-wn","--wandb-name", default=None, help="name of the wandb run")
+parser.add_argument("-wp", "--wandb-project", default=None, help="name of the wandb project")
 parser.add_argument("-s", "--grid_size", type=int, default=9, help="Size of the grid maze.")
 parser.add_argument("-v", "--view_distance", type=int, default=2, help="Field of view of the agent.")
 parser.add_argument("--rand_name", type=str, default="moaotos42", help="Name of the randomization.")
@@ -59,12 +61,13 @@ parser.add_argument("--savedir", default="~/logs/torchbeast",
                     help="Root dir where experiment data will be saved.")
 parser.add_argument("--num_actors", default=4, type=int, metavar="N",
                     help="Number of actors (default: 4).")
-parser.add_argument("--total_steps", default=100000, type=int, metavar="T",
-                    help="Total environment steps to train for.")
+parser.add_argument("-f", "--total_steps", default='1e5', type=str, metavar="T")  # f for frames
+# parser.add_argument("--total_steps", default=100000, type=int, metavar="T",
+                    # help="Total environment steps to train for.")
 parser.add_argument("--batch_size", default=8, type=int, metavar="B",
                     help="Learner batch size.")
-parser.add_argument("--unroll_length", default=80, type=int, metavar="T",
-                    help="The unroll length (time dimension).")
+parser.add_argument("--unroll_length", default=80, type=int, metavar="T", 
+                    help="The unroll length (time dimension).")  # 80
 parser.add_argument("--num_buffers", default=None, type=int,
                     metavar="N", help="Number of shared-memory buffers.")
 parser.add_argument("--num_learner_threads", "--num_threads", default=2, type=int,
@@ -97,8 +100,6 @@ parser.add_argument("--epsilon", default=0.01, type=float,
 parser.add_argument("--grad_norm_clipping", default=40.0, type=float,
                     help="Global gradient norm clip.")
 # yapf: enable
-
-
 logging.basicConfig(
     format=(
         "[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] " "%(message)s"
@@ -322,6 +323,18 @@ def create_buffers(flags, obs_shape, num_actions) -> Buffers:
 
 
 def train(flags):  # pylint: disable=too-many-branches, too-many-statements
+
+    flags.total_steps = int(float(flags.total_steps))  # e.g. 1e5 -> 100000 
+
+    use_wandb = flags.wandb_name is not None
+    if use_wandb:
+        wandb.login()
+        wandb.init(project=flags.wandb_project,
+                   name=flags.wandb_name,
+                   config=flags,
+                   )
+
+
     if flags.xpid is None:
         flags.xpid = "torchbeast-%s" % time.strftime("%Y%m%d-%H%M%S")
     plogger = file_writer.FileWriter(
@@ -438,6 +451,9 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
                 to_log = dict(step=step)
                 to_log.update({k: stats[k] for k in stat_keys})
                 plogger.log(to_log)
+                if flags.wandb_name is not None: 
+                    for k in stat_keys:  
+                        wandb.log({k: stats[k]}, step=step)
                 step += T * B
 
         if i == 0:
@@ -678,7 +694,7 @@ class MemoryGridNet(nn.Module):
         self.observation_shape = observation_shape
         self.num_actions = num_actions
         hidden_size = 64
-        fc_out_size = 512
+        fc_out_size = 64 
 
 
         # self.conv1 = nn.Conv2d(self.observation_shape[0], hidden_size, stride=1, kernel_size=2, padding=0),
