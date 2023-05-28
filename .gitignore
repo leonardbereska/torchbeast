@@ -10,6 +10,7 @@ __pycache__/
 tags*
 slurm*
 wandb*
+memory_grid*
 .Python
 build/
 develop-eggs/

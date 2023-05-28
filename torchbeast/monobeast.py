@@ -28,6 +28,7 @@ import torch
 from torch import multiprocessing as mp
 from torch import nn
 from torch.nn import functional as F
+from collections import namedtuple
 
 from memory_grid.env import GridMazeEnv
 import wandb
@@ -48,6 +49,11 @@ parser.add_argument("-wp", "--wandb-project", default=None, help="name of the wa
 parser.add_argument("-s", "--grid_size", type=int, default=9, help="Size of the grid maze.")
 parser.add_argument("-v", "--view_distance", type=int, default=2, help="Field of view of the agent.")
 parser.add_argument("--rand_name", type=str, default="moaotos42", help="Name of the randomization.")
+parser.add_argument("--seed", type=int, default=42, help="Seed for the randomization.")
+parser.add_argument("--random_maze", default=True, type=bool, help="Whether to randomize the maze.") 
+parser.add_argument("--random_agent_position", default=True, type=bool, help="Whether to randomize the agent.")
+parser.add_argument("--random_targets", default=True, type=bool, help="Whether to randomize the targets.")
+
 parser.add_argument("--mode", default="train",
                     choices=["train", "test", "test_render"],
                     help="Training or test mode.")
@@ -792,7 +798,9 @@ Net = MemoryGridNet
 
 def create_env(flags):
     env_name = "GridMaze{}x{}".format(flags.grid_size, flags.grid_size)
-    env = GridMazeEnv(env_name, rand_name=flags.rand_name, view_distance=flags.view_distance)
+    rand_specs = namedtuple('rand_specs', 'seed random_maze random_targets random_agent_position')
+    random_specs = rand_specs(seed=flags.seed, random_maze=flags.random_maze, random_targets=flags.random_targets, random_agent_position=flags.random_agent_position)
+    env = GridMazeEnv(env_name, random_specs=random_specs, view_distance=flags.view_distance)
     return env
     # return atari_wrappers.wrap_pytorch(
     #     atari_wrappers.wrap_deepmind(
