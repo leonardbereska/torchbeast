@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 tags*
+logs*
 slurm*
 wandb*
 memory_grid*

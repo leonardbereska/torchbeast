@@ -63,7 +63,7 @@ parser.add_argument("--xpid", default=None,
 # Training settings.
 parser.add_argument("--disable_checkpoint", action="store_true",
                     help="Disable saving checkpoint.")
-parser.add_argument("--savedir", default="~/logs/torchbeast",
+parser.add_argument("--savedir", default="./logs",
                     help="Root dir where experiment data will be saved.")
 parser.add_argument("--num_actors", default=4, type=int, metavar="N",
                     help="Number of actors (default: 4).")
@@ -342,13 +342,25 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
 
     if flags.xpid is None:
-        flags.xpid = "torchbeast-%s" % time.strftime("%Y%m%d-%H%M%S")
+        # flags.xpid = "%s" % time.strftime("%y%m%d%H%M")
+        # file_xpid = wandb.run.id if use_wandb else "%s" % time.strftime("%y%m%d%H%M") 
+        if use_wandb:
+            xpid = "{}/{}".format(flags.wandb_project, flags.wandb_name)
+        else:   
+            xpid = "%s" % time.strftime("%y%m%d%H%M")
     plogger = file_writer.FileWriter(
-        xpid=flags.xpid, xp_args=flags.__dict__, rootdir=flags.savedir
+        xpid=xpid, xp_args=flags.__dict__, rootdir=flags.savedir
     )
-    checkpointpath = os.path.expandvars(
-        os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar"))
-    )
+    # checkpointpath = os.path.expandvars(
+        # os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar"))
+    # )
+    # create a checkpoint path from wandb project and name
+    # checkpointpath = os.path.expandvars(os.path.expanduser("%s/%s/%s/s%" % (flags.savedir, flags.wandb_project, flags.wandb_name, "model.tar")))
+    # if use_wandb:
+    checkpointpath = os.path.join(flags.savedir, xpid, "model.tar") 
+    # else: 
+        # checkpointpath = os.path.join(flags.savedir, flags.xpid, "model.tar")
+    print('Saving checkpoints to', checkpointpath)
 
     if flags.num_buffers is None:  # Set sensible default for num_buffers.
         flags.num_buffers = max(2 * flags.num_actors, flags.batch_size)
@@ -490,6 +502,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
             checkpointpath,
         )
 
+
     timer = timeit.default_timer
     try:
         last_checkpoint_time = timer()
@@ -536,7 +549,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
 def test(flags, num_episodes: int = 10):
     if flags.xpid is None:
-        checkpointpath = "./latest/model.tar"
+        checkpointpath = "{}/latest/model.tar".format(flags.savedir)
     else:
         checkpointpath = os.path.expandvars(
             os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar"))
@@ -558,6 +571,20 @@ def test(flags, num_episodes: int = 10):
         agent_outputs = model(observation)
         policy_outputs, _ = agent_outputs
         observation = env.step(policy_outputs["action"])
+        
+        # visualize observation
+        # image = observation['frame']
+        # print(image.shape)
+        # image = image.squeeze()
+        # print(image.shape)
+        # image = image.permute(1, 2, 0).numpy()
+        # # image = image.
+        # from matplotlib import pyplot as plt
+        # plt.imshow(image)
+        # plt.show()
+        # TODO visualize observation
+        # TODO save as gif to wandb occasionally
+
         if observation["done"].item():
             returns.append(observation["episode_return"].item())
             logging.info(
