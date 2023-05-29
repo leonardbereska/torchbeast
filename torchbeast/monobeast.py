@@ -555,6 +555,9 @@ def test(flags, num_episodes: int = 10):
         checkpointpath = os.path.expandvars(
             os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar"))
         )
+    checkpointpath = os.path.expandvars(
+        os.path.expanduser("%s/%s/%s" % (flags.savedir, xpid, "model.tar"))
+    )
 
     gym_env = create_env(flags)
     env = environment.Environment(gym_env)
@@ -567,13 +570,14 @@ def test(flags, num_episodes: int = 10):
     observation = env.initial()
     returns = []
 
+    agent_state = model.initial_state(batch_size=1)
     while len(returns) < num_episodes:
         if flags.mode == "test_render":
             env.gym_env.render()
-        agent_state = model.initial_state(batch_size=1)
-        agent_output, unused_state = model(env_output, agent_state)
-        policy_outputs, _ = agent_outputs
-        observation = env.step(policy_outputs["action"])
+
+        agent_outputs, agent_state = model(observation, agent_state)
+        # policy_outputs, _ = agent_outputs
+        observation = env.step(agent_outputs["action"])
         
         # visualize observation
         # image = observation['frame']
@@ -597,7 +601,7 @@ def test(flags, num_episodes: int = 10):
             )
     env.close()
     logging.info(
-        "Average returns over %i steps: %.1f", num_episodes, sum(returns) / len(returns)
+        "Average returns over %i episodes : %.1f", num_episodes, sum(returns) / len(returns)
     )
 
 
