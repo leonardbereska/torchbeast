@@ -382,7 +382,6 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
     env = create_env(flags)
 
 
-    # model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
     model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
     buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
 
@@ -548,7 +547,10 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
 def test(flags, num_episodes: int = 10):
     if flags.xpid is None:
-        checkpointpath = "{}/latest/model.tar".format(flags.savedir)
+        if flags.wandb_project is not None and flags.wandb_name is not None: 
+            xpid = "{}/{}".format(flags.wandb_project, flags.wandb_name)
+        else:
+            raise ValueError("Must specify xpid.")
     else:
         checkpointpath = os.path.expandvars(
             os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar"))
@@ -557,6 +559,7 @@ def test(flags, num_episodes: int = 10):
     gym_env = create_env(flags)
     env = environment.Environment(gym_env)
     model = Net(gym_env.observation_space.shape, gym_env.action_space.n, flags.use_lstm)
+    # model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
     model.eval()
     checkpoint = torch.load(checkpointpath, map_location="cpu")
     model.load_state_dict(checkpoint["model_state_dict"])
@@ -567,7 +570,8 @@ def test(flags, num_episodes: int = 10):
     while len(returns) < num_episodes:
         if flags.mode == "test_render":
             env.gym_env.render()
-        agent_outputs = model(observation)
+        agent_state = model.initial_state(batch_size=1)
+        agent_output, unused_state = model(env_output, agent_state)
         policy_outputs, _ = agent_outputs
         observation = env.step(policy_outputs["action"])
         
